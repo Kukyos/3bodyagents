@@ -1,7 +1,7 @@
 import { GroqMessage, GroqResponse } from '../types';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL_ID = 'llama3-70b-8192'; // Using Llama 3 70B for high intelligence
+const MODEL_ID = 'meta-llama/llama-4-maverick-17b-128e-instruct'; // Using Llama 3 70B for high intelligence
 
 export const callGroqAgent = async (messages: GroqMessage[], temperature: number = 0.7, apiKey?: string): Promise<string> => {
   const key = apiKey || process.env.GROQ_API_KEY;

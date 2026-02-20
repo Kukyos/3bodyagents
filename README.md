@@ -4,12 +4,13 @@
 
 ### *"The universe is a dark forest."*
 
-**A multi-agent AI research swarm powered by Groq & Llama 3 70B**
+**A multi-agent AI research swarm powered by Groq, ScaleDown & Llama 4 Maverick**
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
 [![Groq](https://img.shields.io/badge/Groq-LPU_Inference-f55036?style=flat-square)](https://groq.com)
+[![ScaleDown](https://img.shields.io/badge/ScaleDown-Compression-8b5cf6?style=flat-square)](https://scaledown.ai)
 [![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
 </div>
@@ -18,9 +19,9 @@
 
 ## What is this?
 
-3 Body Agents is a collaborative multi-agent research system. Give it a topic and watch four specialized AI agents work together in sequence — planning, researching, analyzing, and writing — to produce a comprehensive research report.
+3 Body Agents is a collaborative multi-agent research system. Give it a topic and watch four specialized AI agents work together — planning, researching, analyzing, and writing — to produce a comprehensive research report you can **download as a Word document**.
 
-The agents use **compressed context sharing** to optimize token usage: raw research data gets synthesized into high-density summaries before being passed to the writer, so you get maximum output from minimal context window usage.
+The analyst phase uses the **ScaleDown API** to compress raw research data before LLM synthesis, optimizing token usage and reducing costs. The generation is powered by **Groq's LPU inference** running Llama 4 Maverick.
 
 ## The Swarm
 
@@ -28,16 +29,22 @@ The agents use **compressed context sharing** to optimize token usage: raw resea
 |-------|------|-------------|
 | 🧠 **Trisolaran Lead** | Manager | Breaks down your topic into 3 key research questions |
 | 🔍 **Data Scout** | Researcher | Investigates each question with detailed, fact-heavy answers |
-| 🔬 **Context Synthesizer** | Analyst | Compresses raw findings into high-density summaries |
+| 🔬 **Context Synthesizer** | Analyst | Compresses data via ScaleDown API, then synthesizes key insights |
 | ✍️ **Scribe** | Writer | Compiles everything into a polished markdown report |
 
 ## How it works
 
 ```
-[Your Topic] → Manager (plan) → Researcher (gather) → Analyst (compress) → Writer (report)
+[Your Topic] → Manager (plan) → Researcher (gather) → Analyst (ScaleDown compress + synthesize) → Writer (report) → Download .docx
 ```
 
-Each agent calls Groq's lightning-fast LPU inference running **Llama 3 70B**, and you can watch the entire pipeline in real-time through the operation logs.
+## Features
+
+- **Multi-agent pipeline** — 4 specialized AI agents working in sequence
+- **ScaleDown compression** — raw research data is compressed before analysis to save tokens
+- **Real-time logs** — watch each agent's thought process as it works
+- **Word export** — download the final report as a `.docx` file with one click
+- **In-app API key** — paste your Groq key directly in the UI, no `.env` needed
 
 ## Quick Start
 
@@ -61,7 +68,7 @@ Open [http://localhost:3000](http://localhost:3000) and enter your Groq API key 
 
 You have two options:
 
-1. **In-app (easiest):** Paste your key into the input bar at the top of the page
+1. **In-app (easiest):** Paste your Groq key into the input bar at the top of the page
 2. **Environment variable:** Copy `.env.example` to `.env` and add your key:
 
 ```bash
@@ -76,21 +83,25 @@ Get a free Groq API key at **[console.groq.com](https://console.groq.com)**
 - **Frontend:** React 19 + TypeScript
 - **Bundler:** Vite 6
 - **Styling:** Tailwind CSS (CDN)
-- **AI:** Groq API with Llama 3 70B (`llama3-70b-8192`)
+- **AI Inference:** Groq API with Llama 4 Maverick (`meta-llama/llama-4-maverick-17b-128e-instruct`)
+- **Prompt Compression:** ScaleDown API
+- **Word Export:** Pure JS `.docx` generator (zero dependencies)
 - **Icons:** Lucide React
 
 ## Project Structure
 
 ```
-├── App.tsx              # Main app — agent pipeline orchestration
-├── constants.tsx         # Agent definitions
-├── types.ts             # TypeScript types
-├── index.html           # Entry point with Tailwind config
+├── App.tsx                     # Main app — agent pipeline orchestration
+├── constants.tsx               # Agent definitions
+├── types.ts                    # TypeScript types
+├── index.html                  # Entry point with Tailwind config
 ├── components/
-│   ├── AgentCard.tsx    # Individual agent status card
-│   └── ResearchLog.tsx  # Real-time operation log viewer
+│   ├── AgentCard.tsx           # Individual agent status card
+│   └── ResearchLog.tsx         # Real-time operation log viewer
 └── services/
-    └── groqService.ts   # Groq API client
+    ├── groqService.ts          # Groq LLM API client
+    ├── scaledownService.ts     # ScaleDown prompt compression client
+    └── wordExport.ts           # .docx file generator
 ```
 
 ## License

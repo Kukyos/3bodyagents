@@ -4,7 +4,9 @@ import { ResearchLog } from './components/ResearchLog';
 import { AgentRole, LogEntry, ResearchState } from './types';
 import { AGENTS } from './constants';
 import { callGroqAgent } from './services/groqService';
-import { Play, RotateCcw, StopCircle, FileText, BrainCircuit, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { compressPrompt } from './services/scaledownService';
+import { downloadAsWord } from './services/wordExport';
+import { Play, RotateCcw, StopCircle, FileText, BrainCircuit, KeyRound, Eye, EyeOff, Download, Zap } from 'lucide-react';
 
 const App: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -12,7 +14,7 @@ const App: React.FC = () => {
   const [activeAgent, setActiveAgent] = useState<AgentRole | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [groqApiKey, setGroqApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
+  const [showGroqKey, setShowGroqKey] = useState(false);
   
   const [state, setState] = useState<ResearchState>({
     status: 'idle',
@@ -88,18 +90,31 @@ const App: React.FC = () => {
       
       setState(prev => ({ ...prev, status: 'analyzing', findings }));
 
-      // 3. ANALYSIS & COMPRESSION PHASE (Analyst)
+      // 3. ANALYSIS & COMPRESSION PHASE (Analyst) — ScaleDown + Groq
       setActiveAgent('analyst');
-      addLog('analyst', 'Synthesizing raw data and compressing context to reduce token usage...', 'thought');
+      addLog('analyst', 'Compressing raw data via ScaleDown API to optimize token usage...', 'thought');
+      
+      const rawFindings = findings.join('\n\n');
+      
+      // Use ScaleDown to compress the raw research data first
+      const scaledownResult = await compressPrompt(
+        rawFindings,
+        'Compress this research data into a high-density summary. Keep key facts, stats, and unique insights.'
+      );
+      
+      if (scaledownResult.savedTokens > 0) {
+        addLog('analyst', `ScaleDown saved ~${scaledownResult.savedTokens} tokens. Now synthesizing with LLM...`, 'info');
+      } else {
+        addLog('analyst', 'ScaleDown compression applied. Now synthesizing with LLM...', 'info');
+      }
       
       const analysisPrompt = `
         You are a Senior Data Analyst.
-        Here is the raw research data:
-        ${findings.join('\n\n')}
+        Here is the compressed research data:
+        ${scaledownResult.compressed}
         
-        Task: Compress this information into a high-density summary. 
-        Remove fluff, keep key facts, stats, and unique insights. 
-        This summary will be passed to the writer to save context window space.
+        Task: Produce a final high-density summary that preserves all key facts, stats, and insights.
+        This will be handed to the writer for the final report.
       `;
       
       const compressedContext = await callGroqAgent([{ role: 'user', content: analysisPrompt }], 0.7, groqApiKey || undefined);
@@ -137,6 +152,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDownloadWord = () => {
+    if (!state.finalReport) return;
+    const safeName = state.topic
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50)
+      .toLowerCase();
+    downloadAsWord(state.finalReport, `${safeName || 'research-report'}.docx`);
+  };
+
   const handleReset = () => {
     setState({
       status: 'idle',
@@ -168,9 +193,13 @@ const App: React.FC = () => {
           </div>
           
           <div className="hidden md:flex items-center gap-6">
+             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
+               <Zap size={10} className="text-purple-400" />
+               <span className="text-[10px] text-purple-400 font-medium">ScaleDown</span>
+             </div>
              <div className="flex flex-col items-end">
                 <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Model</span>
-                <span className="text-xs font-mono text-gray-400">Llama-3-70b-Versatile</span>
+                <span className="text-xs font-mono text-gray-400">Llama-4-Maverick-17B</span>
              </div>
              <div className="w-[1px] h-6 bg-border/40"></div>
              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface/50 border border-white/5">
@@ -193,7 +222,7 @@ const App: React.FC = () => {
           </div>
           <div className="relative flex-1 max-w-md">
             <input
-              type={showKey ? 'text' : 'password'}
+              type={showGroqKey ? 'text' : 'password'}
               value={groqApiKey}
               onChange={(e) => setGroqApiKey(e.target.value)}
               placeholder="gsk_..."
@@ -201,11 +230,11 @@ const App: React.FC = () => {
               disabled={isProcessing}
             />
             <button
-              onClick={() => setShowKey(!showKey)}
+              onClick={() => setShowGroqKey(!showGroqKey)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
               tabIndex={-1}
             >
-              {showKey ? <EyeOff size={12} /> : <Eye size={12} />}
+              {showGroqKey ? <EyeOff size={12} /> : <Eye size={12} />}
             </button>
           </div>
           {groqApiKey && (
@@ -293,8 +322,18 @@ const App: React.FC = () => {
                    <FileText size={16} className="text-primary" />
                    <h2 className="font-semibold text-sm text-white">Final Report</h2>
                 </div>
-                <div className="text-[10px] px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                  Markdown Generated
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDownloadWord}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors text-xs font-medium"
+                    title="Download as Word Document"
+                  >
+                    <Download size={12} />
+                    Download .docx
+                  </button>
+                  <div className="text-[10px] px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                    Markdown Generated
+                  </div>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-6 prose prose-invert prose-sm max-w-none custom-scrollbar">

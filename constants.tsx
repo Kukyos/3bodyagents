@@ -20,7 +20,7 @@ export const AGENTS: Record<string, Agent> = {
   analyst: {
     id: 'analyst',
     name: 'Context Synthesizer',
-    description: 'Compresses large datasets into key insights to save tokens.',
+    description: 'Uses ScaleDown API to compress data, then synthesizes key insights.',
     color: 'text-purple-400',
     icon: 'Microscope'
   },
