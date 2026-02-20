@@ -1,0 +1,5 @@
+{
+  "name": "3 Body Agents",
+  "description": "A collaborative multi-agent research swarm powered by Groq & Llama 3 70B, utilizing compressed context sharing to optimize research workflows.",
+  "requestFramePermissions": []
+}
